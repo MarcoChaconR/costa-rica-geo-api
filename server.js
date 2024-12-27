@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 
 // URL del archivo JSON en GitHub
-const jsonUrl = 'https://raw.githubusercontent.com/MarcoChaconR/distribucion_territorial_costa_rica/main/DTCR.json';
+const jsonUrl = 'https://raw.githubusercontent.com/MarcoChaconR/distribucion_territorial_costa_rica/refs/heads/main/distritos.json';
 
 // Ruta para obtener las provincias
 app.get('/provincias', async (req, res) => {
