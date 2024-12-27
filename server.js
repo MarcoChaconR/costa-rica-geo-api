@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-
 const app = express();
+
 app.use(cors());
 
 // URL del archivo JSON en GitHub
@@ -21,13 +21,19 @@ app.get('/provincias', async (req, res) => {
     }
 });
 
-// Ruta para obtener los cantones de una provincia
-app.get('/provincias/:provincia/cantones', async (req, res) => {
+// Ruta para obtener los cantones de una provincia (usando header)
+app.get('/cantones', async (req, res) => {
     try {
-        const { provincia } = req.params;
+        const provincia = req.header('provincia');
+        
+        if (!provincia) {
+            return res.status(400).json({ error: 'Debe especificar la provincia en el header' });
+        }
+
         const response = await axios.get(jsonUrl);
         const data = response.data;
         const cantones = data['Costa Rica']['Provincias'][provincia]?.Cantones;
+
         if (cantones) {
             res.json(Object.keys(cantones));
         } else {
@@ -39,19 +45,30 @@ app.get('/provincias/:provincia/cantones', async (req, res) => {
     }
 });
 
-// Ruta para obtener los distritos de un cantón
-app.get('/cantones/:canton/distritos', async (req, res) => {
+// Ruta para obtener los distritos de un cantón (usando headers para provincia y cantón)
+app.get('/distritos', async (req, res) => {
     try {
-        const { canton } = req.params;
+        const provincia = req.header('provincia');
+        const canton = req.header('canton');
+
+        if (!provincia || !canton) {
+            return res.status(400).json({ error: 'Debe especificar provincia y cantón en los headers' });
+        }
+
         const response = await axios.get(jsonUrl);
         const data = response.data;
 
-        for (let provincia in data['Costa Rica']['Provincias']) {
-            if (data['Costa Rica']['Provincias'][provincia].Cantones[canton]) {
-                return res.json(data['Costa Rica']['Provincias'][provincia].Cantones[canton].Distritos);
-            }
+        const provinciaData = data['Costa Rica']['Provincias'][provincia];
+        if (!provinciaData) {
+            return res.status(404).json({ error: 'Provincia no encontrada' });
         }
-        res.status(404).json({ error: 'Cantón no encontrado' });
+
+        const cantonData = provinciaData.Cantones[canton];
+        if (!cantonData) {
+            return res.status(404).json({ error: 'Cantón no encontrado' });
+        }
+
+        res.json(cantonData.Distritos);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'No se pudo obtener la información' });
